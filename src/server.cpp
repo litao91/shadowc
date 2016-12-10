@@ -1,5 +1,6 @@
 #include <iostream>
 #include "cxxopts.hpp"
+#include "asyncdns.hpp"
 
 int main(int argc, char** argv) {
     cxxopts::Options options(argv[0], "Command Options");
@@ -16,4 +17,7 @@ int main(int argc, char** argv) {
     std::cout << "Port: " << port << std::endl;
     std::cout << "Worker: " << num_worker << std::endl;
     std::cout << "================================" << std::endl;
+
+    asyncdns::DNSResolver* dnsresolver = new asyncdns::DNSResolver();
+    delete dnsresolver;
 }

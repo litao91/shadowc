@@ -2,6 +2,11 @@ cmake_minimum_required (VERSION 3.1)
 project (shadowc)
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 
+add_library(eventloop STATIC "${PROJECT_SOURCE_DIR}/lib/eventloop.cpp")
+add_library(asyncdns STATIC "${PROJECT_SOURCE_DIR}/lib/asyncdns.cpp")
+target_link_libraries(asyncdns eventloop)
+
 add_executable(server "${PROJECT_SOURCE_DIR}/src/server.cpp")
 target_compile_options(server PUBLIC -std=c++11 -Wall)
+target_link_libraries(server asyncdns)
 

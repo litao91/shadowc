@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named eventloop
+
+# Build rule for target.
+eventloop: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 eventloop
+.PHONY : eventloop
+
+# fast build rule for target.
+eventloop/fast:
+	$(MAKE) -f CMakeFiles/eventloop.dir/build.make CMakeFiles/eventloop.dir/build
+.PHONY : eventloop/fast
+
+#=============================================================================
 # Target rules for targets named server
 
 # Build rule for target.
@@ -122,6 +135,73 @@ server: cmake_check_build_system
 server/fast:
 	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/build
 .PHONY : server/fast
+
+#=============================================================================
+# Target rules for targets named asyncdns
+
+# Build rule for target.
+asyncdns: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 asyncdns
+.PHONY : asyncdns
+
+# fast build rule for target.
+asyncdns/fast:
+	$(MAKE) -f CMakeFiles/asyncdns.dir/build.make CMakeFiles/asyncdns.dir/build
+.PHONY : asyncdns/fast
+
+lib/asyncdns.o: lib/asyncdns.cpp.o
+
+.PHONY : lib/asyncdns.o
+
+# target to build an object file
+lib/asyncdns.cpp.o:
+	$(MAKE) -f CMakeFiles/asyncdns.dir/build.make CMakeFiles/asyncdns.dir/lib/asyncdns.cpp.o
+.PHONY : lib/asyncdns.cpp.o
+
+lib/asyncdns.i: lib/asyncdns.cpp.i
+
+.PHONY : lib/asyncdns.i
+
+# target to preprocess a source file
+lib/asyncdns.cpp.i:
+	$(MAKE) -f CMakeFiles/asyncdns.dir/build.make CMakeFiles/asyncdns.dir/lib/asyncdns.cpp.i
+.PHONY : lib/asyncdns.cpp.i
+
+lib/asyncdns.s: lib/asyncdns.cpp.s
+
+.PHONY : lib/asyncdns.s
+
+# target to generate assembly for a file
+lib/asyncdns.cpp.s:
+	$(MAKE) -f CMakeFiles/asyncdns.dir/build.make CMakeFiles/asyncdns.dir/lib/asyncdns.cpp.s
+.PHONY : lib/asyncdns.cpp.s
+
+lib/eventloop.o: lib/eventloop.cpp.o
+
+.PHONY : lib/eventloop.o
+
+# target to build an object file
+lib/eventloop.cpp.o:
+	$(MAKE) -f CMakeFiles/eventloop.dir/build.make CMakeFiles/eventloop.dir/lib/eventloop.cpp.o
+.PHONY : lib/eventloop.cpp.o
+
+lib/eventloop.i: lib/eventloop.cpp.i
+
+.PHONY : lib/eventloop.i
+
+# target to preprocess a source file
+lib/eventloop.cpp.i:
+	$(MAKE) -f CMakeFiles/eventloop.dir/build.make CMakeFiles/eventloop.dir/lib/eventloop.cpp.i
+.PHONY : lib/eventloop.cpp.i
+
+lib/eventloop.s: lib/eventloop.cpp.s
+
+.PHONY : lib/eventloop.s
+
+# target to generate assembly for a file
+lib/eventloop.cpp.s:
+	$(MAKE) -f CMakeFiles/eventloop.dir/build.make CMakeFiles/eventloop.dir/lib/eventloop.cpp.s
+.PHONY : lib/eventloop.cpp.s
 
 src/server.o: src/server.cpp.o
 
@@ -157,8 +237,16 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
-	@echo "... rebuild_cache"
+	@echo "... eventloop"
 	@echo "... server"
+	@echo "... asyncdns"
+	@echo "... rebuild_cache"
+	@echo "... lib/asyncdns.o"
+	@echo "... lib/asyncdns.i"
+	@echo "... lib/asyncdns.s"
+	@echo "... lib/eventloop.o"
+	@echo "... lib/eventloop.i"
+	@echo "... lib/eventloop.s"
 	@echo "... src/server.o"
 	@echo "... src/server.i"
 	@echo "... src/server.s"
