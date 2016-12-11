@@ -1,14 +1,85 @@
 #include "asyncdns.hpp"
 #include "utils.cpp"
 #include <iostream>
+#include <stdio.h>
 #include <string>
 #include <cstring>
 #include <sys/socket.h>
 #include <netinet/udp.h>
 #include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
+#include <time.h>
+#include <vector>
 
 namespace asyncdns {
+const static unsigned short QTYPE_ANY = 255;
+const static unsigned short QTYPE_A = 1;
+const static unsigned short QTYPE_AAAA = 28;
+const static unsigned short QTYPE_CNAME = 5;
+
+static void build_address(char* address) {
+    
+}
+
+static unsigned char* build_request(char* address, unsigned short qtype) {
+    std::vector<unsigned char> buf;
+    srand(time(NULL));
+    unsigned short rnd = rand();
+    // build request, note that network byte order is big-endian
+    // request id
+    buf.push_back(rnd >> 8);
+    buf.psuh_back(rnd & 0xFF);
+    // header (10 bytes)
+    buf.push_back(1);
+    buf.push_back(0);
+    buf.push_back(0);
+    buf.push_back(1);
+    buf.push_back(0);
+    buf.push_back(0);
+    buf.push_back(0);
+    buf.push_back(0);
+    buf.push_back(0);
+    buf.push_back(0);
+
+    // build address, TODO: error handling
+    int label_len_idx = buf.size();
+    buf.push_back(0); // just a place holder
+    unsigned char label_len = 0;
+    while(*address != 0) {
+        char v = *address;
+        if (v == '.') {
+            buf[label_len_idx] = label_len;
+            label_len = 0;
+            label_len_idx = buf.size();
+        } else {
+            buf.push_back(v);
+            ++label_len;
+        }
+        ++address;
+    }
+    buf[label_len_idx] = label_len;
+    buf.push_back(0);
+    // intel is little endian, we don't care about other 
+    // QTYPE_A
+    buf.push_back(QTYPE_A >> 8); // most significant bit
+    buf.push_back(QTYPE_A & 0xFF);
+
+    // QCLASS_IN=1
+    buf.push_back(0);
+    buf.push_back(1);
+
+    unsigned char* req = new unsigned char[buf.size()];
+    for (int i = 0; i < buf.size(); ++i) {
+        unsigned char c = buf[i];
+        printf("%d", c);
+        req[i] = buf[i];
+    }
+    printf("\n");
+    return req;
+}
+
 DNSResolver::DNSResolver() {
     std::cout << "Init DNSResolver" << std::endl;
     this->servers = new std::string[2];
@@ -21,8 +92,8 @@ DNSResolver::~DNSResolver() {
     delete [] this->servers;
 }
 
-void DNSResolver::resolve(const std::string& hostname, callback_t cb) {
-    std::cout << "Resolving: " << hostname << std::endl;
+void DNSResolver::resolve(const char* hostname, callback_t cb) {
+    printf("Resolveing host name: %s", hostname);
 }
 
 // Create the socket for dns resolver and add the socket to eventloop
@@ -59,10 +130,28 @@ void DNSResolver::add_to_loop(eventloop::EventLoop* loop) {
         break;
     }
     freeaddrinfo(result);
-    // add to loop
-    loop -> add(this->dns_socket, EPOLLIN, this);
+    // add to loop, wait for incoming data, edge trigger
+    loop -> add(this->dns_socket, EPOLLIN | EPOLLET, this);
 }
 
 void DNSResolver::handle_event(const epoll_event* evt) {
+    int fd = evt->data.fd;
+    if (this->dns_socket != fd) {
+        return;
+    }
+
+    if (evt->events & EPOLLERR) {
+        std::cerr << "epoll error" << std::endl;
+        close(fd);
+        return;
+        // TODO: create new socket and start over again
+    } else {
+        char buff[1024];
+        sockaddr src_addr;
+        socklen_t peer_addr_len = sizeof(sockaddr_storage);
+        ssize_t nread = recvfrom(fd, buff, 1024, 0, &src_addr, &peer_addr_len);
+        char *ip = inet_ntoa(((sockaddr_in*) &src_addr) -> sin_addr);
+        printf("Resolve dns from %s", ip);
+    }
 }
 }

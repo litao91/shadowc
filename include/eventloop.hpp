@@ -18,7 +18,7 @@ namespace eventloop {
             int run();
         private:
             int efd;
-            std::map<int, EventHandler*> fdcb_map;
+            std::map<int, EventHandler*> fd_handler_map;
     };
 }
 #endif

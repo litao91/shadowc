@@ -15,11 +15,11 @@ EventLoop::~EventLoop() {
 
 void EventLoop::add(int fd, int mode, EventHandler* handler) {
     epoll_event ev;
-    ev.events = EPOLLIN | EPOLLRDHUP | EPOLLET; 
+    ev.events = mode;
     if(epoll_ctl(this->efd, EPOLL_CTL_ADD, fd, &ev) == -1) {
         std::cerr << "epoll_ctl_add" << std::endl;
     }
-    this->fdcb_map.insert(std::pair<int, EventHandler*>(fd, handler));
+    this->fd_handler_map.insert(std::pair<int, EventHandler*>(fd, handler));
 }
 
 int EventLoop::run() {
@@ -38,7 +38,7 @@ int EventLoop::run() {
         for (int n = 0; n < nfds; ++n) {
             epoll_event* e = events + n;
             int fd = e->data.fd;
-            EventHandler* handler = this->fdcb_map[fd];
+            EventHandler* handler = this->fd_handler_map[fd];
             handler->handle_event(e);
         }
     }
