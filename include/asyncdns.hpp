@@ -7,10 +7,17 @@ namespace asyncdns {
     typedef void (*callback_t)(const std::string& ip, 
             const std::string& hostname);
 
-    class DNSResolver {
+    class DNSResolver: public eventloop::EventHandler {
         public:
             DNSResolver();
+            virtual ~DNSResolver();
             void resolve(const std::string& hostname, callback_t cb);
+            void add_to_loop(eventloop::EventLoop* loop);
+            void handle_event(const epoll_event* evt);
+        private:
+            std::string* servers;
+            eventloop::EventLoop* loop;
+            int dns_socket;
     };
 }
 #endif

@@ -137,6 +137,19 @@ server/fast:
 .PHONY : server/fast
 
 #=============================================================================
+# Target rules for targets named utils
+
+# Build rule for target.
+utils: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 utils
+.PHONY : utils
+
+# fast build rule for target.
+utils/fast:
+	$(MAKE) -f CMakeFiles/utils.dir/build.make CMakeFiles/utils.dir/build
+.PHONY : utils/fast
+
+#=============================================================================
 # Target rules for targets named asyncdns
 
 # Build rule for target.
@@ -203,6 +216,33 @@ lib/eventloop.cpp.s:
 	$(MAKE) -f CMakeFiles/eventloop.dir/build.make CMakeFiles/eventloop.dir/lib/eventloop.cpp.s
 .PHONY : lib/eventloop.cpp.s
 
+lib/utils.o: lib/utils.cpp.o
+
+.PHONY : lib/utils.o
+
+# target to build an object file
+lib/utils.cpp.o:
+	$(MAKE) -f CMakeFiles/utils.dir/build.make CMakeFiles/utils.dir/lib/utils.cpp.o
+.PHONY : lib/utils.cpp.o
+
+lib/utils.i: lib/utils.cpp.i
+
+.PHONY : lib/utils.i
+
+# target to preprocess a source file
+lib/utils.cpp.i:
+	$(MAKE) -f CMakeFiles/utils.dir/build.make CMakeFiles/utils.dir/lib/utils.cpp.i
+.PHONY : lib/utils.cpp.i
+
+lib/utils.s: lib/utils.cpp.s
+
+.PHONY : lib/utils.s
+
+# target to generate assembly for a file
+lib/utils.cpp.s:
+	$(MAKE) -f CMakeFiles/utils.dir/build.make CMakeFiles/utils.dir/lib/utils.cpp.s
+.PHONY : lib/utils.cpp.s
+
 src/server.o: src/server.cpp.o
 
 .PHONY : src/server.o
@@ -237,16 +277,20 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
+	@echo "... rebuild_cache"
 	@echo "... eventloop"
 	@echo "... server"
+	@echo "... utils"
 	@echo "... asyncdns"
-	@echo "... rebuild_cache"
 	@echo "... lib/asyncdns.o"
 	@echo "... lib/asyncdns.i"
 	@echo "... lib/asyncdns.s"
 	@echo "... lib/eventloop.o"
 	@echo "... lib/eventloop.i"
 	@echo "... lib/eventloop.s"
+	@echo "... lib/utils.o"
+	@echo "... lib/utils.i"
+	@echo "... lib/utils.s"
 	@echo "... src/server.o"
 	@echo "... src/server.i"
 	@echo "... src/server.s"

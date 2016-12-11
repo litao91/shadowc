@@ -3,8 +3,14 @@ project (shadowc)
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 
 add_library(eventloop STATIC "${PROJECT_SOURCE_DIR}/lib/eventloop.cpp")
+target_compile_options(eventloop PUBLIC -std=c++11 -Wall)
+
+add_library(utils STATIC "${PROJECT_SOURCE_DIR}/lib/utils.cpp")
+target_compile_options(utils PUBLIC -std=c++11 -Wall)
+
 add_library(asyncdns STATIC "${PROJECT_SOURCE_DIR}/lib/asyncdns.cpp")
-target_link_libraries(asyncdns eventloop)
+target_link_libraries(asyncdns eventloop utils)
+target_compile_options(asyncdns PUBLIC -std=c++11 -Wall)
 
 add_executable(server "${PROJECT_SOURCE_DIR}/src/server.cpp")
 target_compile_options(server PUBLIC -std=c++11 -Wall)
