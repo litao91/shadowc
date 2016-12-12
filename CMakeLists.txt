@@ -16,3 +16,7 @@ add_executable(server "${PROJECT_SOURCE_DIR}/src/server.cpp")
 target_compile_options(server PUBLIC -std=c++11 -Wall)
 target_link_libraries(server asyncdns)
 
+add_executable(test_asyncdns "${PROJECT_SOURCE_DIR}/test/test_asyncdns.cpp")
+target_compile_options(test_asyncdns PUBLIC -std=c++11 -Wall)
+target_link_libraries(test_asyncdns asyncdns)
+

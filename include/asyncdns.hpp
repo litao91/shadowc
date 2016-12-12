@@ -4,6 +4,8 @@
 #include<string>
 #include "eventloop.hpp"
 namespace asyncdns {
+    unsigned char* build_request(char* address);
+
     typedef void (*callback_t)(const std::string& ip, 
             const std::string& hostname);
 

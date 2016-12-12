@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named test_asyncdns
+
+# Build rule for target.
+test_asyncdns: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test_asyncdns
+.PHONY : test_asyncdns
+
+# fast build rule for target.
+test_asyncdns/fast:
+	$(MAKE) -f CMakeFiles/test_asyncdns.dir/build.make CMakeFiles/test_asyncdns.dir/build
+.PHONY : test_asyncdns/fast
+
+#=============================================================================
 # Target rules for targets named eventloop
 
 # Build rule for target.
@@ -270,6 +283,33 @@ src/server.cpp.s:
 	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/server.cpp.s
 .PHONY : src/server.cpp.s
 
+test/test_asyncdns.o: test/test_asyncdns.cpp.o
+
+.PHONY : test/test_asyncdns.o
+
+# target to build an object file
+test/test_asyncdns.cpp.o:
+	$(MAKE) -f CMakeFiles/test_asyncdns.dir/build.make CMakeFiles/test_asyncdns.dir/test/test_asyncdns.cpp.o
+.PHONY : test/test_asyncdns.cpp.o
+
+test/test_asyncdns.i: test/test_asyncdns.cpp.i
+
+.PHONY : test/test_asyncdns.i
+
+# target to preprocess a source file
+test/test_asyncdns.cpp.i:
+	$(MAKE) -f CMakeFiles/test_asyncdns.dir/build.make CMakeFiles/test_asyncdns.dir/test/test_asyncdns.cpp.i
+.PHONY : test/test_asyncdns.cpp.i
+
+test/test_asyncdns.s: test/test_asyncdns.cpp.s
+
+.PHONY : test/test_asyncdns.s
+
+# target to generate assembly for a file
+test/test_asyncdns.cpp.s:
+	$(MAKE) -f CMakeFiles/test_asyncdns.dir/build.make CMakeFiles/test_asyncdns.dir/test/test_asyncdns.cpp.s
+.PHONY : test/test_asyncdns.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -278,6 +318,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... test_asyncdns"
 	@echo "... eventloop"
 	@echo "... server"
 	@echo "... utils"
@@ -294,6 +335,9 @@ help:
 	@echo "... src/server.o"
 	@echo "... src/server.i"
 	@echo "... src/server.s"
+	@echo "... test/test_asyncdns.o"
+	@echo "... test/test_asyncdns.i"
+	@echo "... test/test_asyncdns.s"
 .PHONY : help
 
 

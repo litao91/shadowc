@@ -19,18 +19,14 @@ const static unsigned short QTYPE_A = 1;
 const static unsigned short QTYPE_AAAA = 28;
 const static unsigned short QTYPE_CNAME = 5;
 
-static void build_address(char* address) {
-    
-}
-
-static unsigned char* build_request(char* address, unsigned short qtype) {
+unsigned char* build_request(char* address) {
     std::vector<unsigned char> buf;
     srand(time(NULL));
     unsigned short rnd = rand();
     // build request, note that network byte order is big-endian
     // request id
     buf.push_back(rnd >> 8);
-    buf.psuh_back(rnd & 0xFF);
+    buf.push_back(rnd & 0xFF);
     // header (10 bytes)
     buf.push_back(1);
     buf.push_back(0);
@@ -53,6 +49,7 @@ static unsigned char* build_request(char* address, unsigned short qtype) {
             buf[label_len_idx] = label_len;
             label_len = 0;
             label_len_idx = buf.size();
+            buf.push_back(0); // place holder for the length of next label
         } else {
             buf.push_back(v);
             ++label_len;
@@ -71,9 +68,10 @@ static unsigned char* build_request(char* address, unsigned short qtype) {
     buf.push_back(1);
 
     unsigned char* req = new unsigned char[buf.size()];
-    for (int i = 0; i < buf.size(); ++i) {
+    printf("Request: ");
+    for (size_t i = 0; i < buf.size(); ++i) {
         unsigned char c = buf[i];
-        printf("%d", c);
+        printf("%lu:%d ", i, c);
         req[i] = buf[i];
     }
     printf("\n");
