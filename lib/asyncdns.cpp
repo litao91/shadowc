@@ -12,6 +12,7 @@
 #include <netdb.h>
 #include <time.h>
 #include <vector>
+#include <utility>
 
 namespace asyncdns {
 const static unsigned short QTYPE_ANY = 255;
@@ -19,7 +20,7 @@ const static unsigned short QTYPE_A = 1;
 const static unsigned short QTYPE_AAAA = 28;
 const static unsigned short QTYPE_CNAME = 5;
 
-unsigned char* build_request(char* address) {
+std::pair<unsigned char*, int> build_request(const char* address) {
     std::vector<unsigned char> buf;
     srand(time(NULL));
     unsigned short rnd = rand();
@@ -75,12 +76,14 @@ unsigned char* build_request(char* address) {
         req[i] = buf[i];
     }
     printf("\n");
-    return req;
+    return std::pair<unsigned char*, int>(req, buf.size());
 }
 
 DNSResolver::DNSResolver() {
     std::cout << "Init DNSResolver" << std::endl;
-    this->servers = new std::string[2];
+    // TODO: pass domain servers as arguments
+    this->num_servers = 2;
+    this->servers = new const char*[num_servers];
     this->servers[0] = "8.8.4.4";
     this->servers[2] = "8.8.8.8";
     this->loop = NULL;
@@ -152,4 +155,20 @@ void DNSResolver::handle_event(const epoll_event* evt) {
         printf("Resolve dns from %s", ip);
     }
 }
+
+void DNSResolver::send_req(const char* hostname) {
+    std::pair<unsigned char*, int> req = build_request(hostname);
+    unsigned char* buf = req.first;
+    size_t len = req.second;
+
+    for(int i = 0; i < num_servers; ++i) {
+        const char* server = servers[i];
+        printf("Resolving %s using server %s", hostname, server);
+        // sendto(this->dns_socket, req, len, 
+    }
+
+    delete [] buf;
 }
+
+}
+
