@@ -95,6 +95,7 @@ DNSResolver::~DNSResolver() {
 
 void DNSResolver::resolve(const char* hostname, callback_t cb) {
     printf("Resolveing host name: %s", hostname);
+    
 }
 
 // Create the socket for dns resolver and add the socket to eventloop
@@ -164,11 +165,14 @@ void DNSResolver::send_req(const char* hostname) {
     for(int i = 0; i < num_servers; ++i) {
         const char* server = servers[i];
         printf("Resolving %s using server %s", hostname, server);
-        // sendto(this->dns_socket, req, len, 
+        sockaddr_in sa;
+        sa.sin_family = AF_INET;
+        sa.sin_addr.s_addr = inet_addr(server);
+        sa.sin_port = 53;
+        sendto(this->dns_socket, buf, len, 0, (sockaddr *) &sa, sizeof(sa));
     }
 
     delete [] buf;
 }
 
-}
 
