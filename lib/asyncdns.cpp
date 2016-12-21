@@ -91,11 +91,23 @@ DNSResolver::DNSResolver() {
 
 DNSResolver::~DNSResolver() {
     delete [] this->servers;
+    host_to_cb_t::iterator it = hostname_to_cb.begin();
+    while(it != hostname_to_cb.end()) {
+        delete it->second;
+        ++it;
+    }
 }
 
 void DNSResolver::resolve(const char* hostname, callback_t cb) {
     printf("Resolveing host name: %s", hostname);
-    
+    // TODO: Cache the resolved hosts
+    // Add the call back to hostname_to_cb
+    host_to_cb_t::iterator it = this->hostname_to_cb.find(hostname);
+    if (it == hostname_to_cb.end()) {
+        // add new entry for the hostname
+        hostname_to_cb[hostname] = new std::vector<callback_t>();
+    }
+
 }
 
 // Create the socket for dns resolver and add the socket to eventloop
@@ -152,6 +164,7 @@ void DNSResolver::handle_event(const epoll_event* evt) {
         sockaddr src_addr;
         socklen_t peer_addr_len = sizeof(sockaddr_storage);
         ssize_t nread = recvfrom(fd, buff, 1024, 0, &src_addr, &peer_addr_len);
+        printf("Read %ld bytes", nread);
         char *ip = inet_ntoa(((sockaddr_in*) &src_addr) -> sin_addr);
         printf("Resolve dns from %s", ip);
     }
@@ -174,5 +187,4 @@ void DNSResolver::send_req(const char* hostname) {
 
     delete [] buf;
 }
-
-
+}

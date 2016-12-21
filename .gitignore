@@ -4,3 +4,6 @@ CMakeCache.txt
 server
 *.a
 test_asyncdns
+.ropeproject/
+compile_commands.json
+tags
