@@ -1,7 +1,6 @@
 #include "asyncdns.hpp"
 #include "utils.cpp"
 #include <iostream>
-#include <stdio.h>
 #include <string>
 #include <cstring>
 #include <sys/socket.h>
@@ -69,13 +68,13 @@ std::pair<unsigned char*, int> build_request(const char* address) {
     buf.push_back(1);
 
     unsigned char* req = new unsigned char[buf.size()];
-    printf("Request: ");
+    std::cout << "Request: ";
     for (size_t i = 0; i < buf.size(); ++i) {
         unsigned char c = buf[i];
-        printf("%lu:%d ", i, c);
+        std::cout << i << ":" << c;
         req[i] = buf[i];
     }
-    printf("\n");
+    std::cout << std::endl;
     return std::pair<unsigned char*, int>(req, buf.size());
 }
 
@@ -85,8 +84,9 @@ DNSResolver::DNSResolver() {
     this->num_servers = 2;
     this->servers = new const char*[num_servers];
     this->servers[0] = "8.8.4.4";
-    this->servers[2] = "8.8.8.8";
+    this->servers[1] = "8.8.8.8";
     this->loop = NULL;
+    this->dns_socket = 0;
 }
 
 DNSResolver::~DNSResolver() {
@@ -98,16 +98,31 @@ DNSResolver::~DNSResolver() {
     }
 }
 
+void DNSResolver::close() {
+    if (this->dns_socket) {
+        ::close(this->dns_socket);
+        if (this->loop) {
+            this->loop->remove(this->dns_socket);
+        }
+    }
+
+}
+
 void DNSResolver::resolve(const char* hostname, callback_t cb) {
-    printf("Resolveing host name: %s", hostname);
-    // TODO: Cache the resolved hosts
+    std::cout << "Resolving host name: " << hostname << std::endl;
+    // TODO: Cache and hostname sanity check
     // Add the call back to hostname_to_cb
     host_to_cb_t::iterator it = this->hostname_to_cb.find(hostname);
     if (it == hostname_to_cb.end()) {
         // add new entry for the hostname
         hostname_to_cb[hostname] = new std::vector<callback_t>();
+        hostname_status_map[hostname] = this->STATUS_FIRST;
+        this->send_req(hostname);
+        this->hostname_to_cb[hostname]->push_back(cb);
+    } else {
+        this->hostname_to_cb[hostname]->push_back(cb);
+        this->send_req(hostname);
     }
-
 }
 
 // Create the socket for dns resolver and add the socket to eventloop
@@ -117,6 +132,7 @@ void DNSResolver::add_to_loop(eventloop::EventLoop* loop) {
         return;
     }
     this-> loop = loop;
+    std::cout << "Creating socket" << std::endl;
     // create socket
     addrinfo hints;
     memset(&hints, 0, sizeof(addrinfo));
@@ -156,7 +172,7 @@ void DNSResolver::handle_event(const epoll_event* evt) {
 
     if (evt->events & EPOLLERR) {
         std::cerr << "epoll error" << std::endl;
-        close(fd);
+        ::close(fd);
         return;
         // TODO: create new socket and start over again
     } else {
@@ -164,9 +180,9 @@ void DNSResolver::handle_event(const epoll_event* evt) {
         sockaddr src_addr;
         socklen_t peer_addr_len = sizeof(sockaddr_storage);
         ssize_t nread = recvfrom(fd, buff, 1024, 0, &src_addr, &peer_addr_len);
-        printf("Read %ld bytes", nread);
+        std::cout << "Read " << nread << " bytes" << std::endl;
         char *ip = inet_ntoa(((sockaddr_in*) &src_addr) -> sin_addr);
-        printf("Resolve dns from %s", ip);
+        std::cout << "Resolve dns from "  << ip << std::endl;
     }
 }
 
@@ -177,7 +193,7 @@ void DNSResolver::send_req(const char* hostname) {
 
     for(int i = 0; i < num_servers; ++i) {
         const char* server = servers[i];
-        printf("Resolving %s using server %s", hostname, server);
+        std::cout << "Resolving " << hostname << "  using server " << server << std::endl;
         sockaddr_in sa;
         sa.sin_family = AF_INET;
         sa.sin_addr.s_addr = inet_addr(server);

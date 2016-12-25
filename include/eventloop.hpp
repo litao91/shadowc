@@ -15,6 +15,7 @@ namespace eventloop {
             EventLoop();
             ~EventLoop();
             void add(int fd, int mode, EventHandler* handler);
+            void remove(int fd);
             int run();
         private:
             int efd;

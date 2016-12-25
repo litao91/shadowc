@@ -17,11 +17,15 @@ namespace asyncdns {
 
     class DNSResolver: public eventloop::EventHandler {
         public:
+            const int STATUS_FIRST = 0;
+            const int STATUS_SECOND = 1;
+
             DNSResolver();
             virtual ~DNSResolver();
             void resolve(const char* hostname, callback_t cb);
             void add_to_loop(eventloop::EventLoop* loop);
             void handle_event(const epoll_event* evt);
+            void close();
         private:
             const char** servers;
             int num_servers;
@@ -29,6 +33,7 @@ namespace asyncdns {
             int dns_socket;
             void send_req(const char* hostname);
             host_to_cb_t hostname_to_cb;
+            std::map<std::string, int> hostname_status_map;
     };
 }
 #endif

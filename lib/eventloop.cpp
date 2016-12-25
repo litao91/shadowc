@@ -14,12 +14,18 @@ EventLoop::~EventLoop() {
 }
 
 void EventLoop::add(int fd, int mode, EventHandler* handler) {
+    std::cout << "Addinig new socket " << fd << std::endl;
     epoll_event ev;
     ev.events = mode;
     if(epoll_ctl(this->efd, EPOLL_CTL_ADD, fd, &ev) == -1) {
         std::cerr << "epoll_ctl_add" << std::endl;
     }
     this->fd_handler_map.insert(std::pair<int, EventHandler*>(fd, handler));
+}
+
+void EventLoop::remove(int fd) {
+    epoll_ctl(this->efd, EPOLL_CTL_DEL, fd, NULL);
+    this->fd_handler_map.erase(fd);
 }
 
 int EventLoop::run() {
@@ -34,6 +40,7 @@ int EventLoop::run() {
             }
             continue;
         }
+        std::cout << "Received " << nfds << " File descriptors";
 
         for (int n = 0; n < nfds; ++n) {
             epoll_event* e = events + n;
