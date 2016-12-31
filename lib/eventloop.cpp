@@ -7,6 +7,11 @@ namespace eventloop {
 EventLoop::EventLoop() {
     std::cout << "INIT eventloop" << std::endl;
     this->efd = epoll_create1(0); // todo error handling
+    if (this->efd == -1) {
+        std::cerr << "Error creating epoll fd" << std::endl;
+        exit(1);
+    }
+    std::cout << "Created epoll fd " << this->efd << std::endl;
 }
 
 EventLoop::~EventLoop() {
@@ -14,11 +19,11 @@ EventLoop::~EventLoop() {
 }
 
 void EventLoop::add(int fd, int mode, EventHandler* handler) {
-    std::cout << "Addinig new socket " << fd << std::endl;
+    std::cout << "Addinig new socket " << fd << " to event loop" <<  std::endl;
     epoll_event ev;
     ev.events = mode;
     if(epoll_ctl(this->efd, EPOLL_CTL_ADD, fd, &ev) == -1) {
-        std::cerr << "epoll_ctl_add" << std::endl;
+        std::cerr << "Error epoll_ctl_add" << std::endl;
     }
     this->fd_handler_map.insert(std::pair<int, EventHandler*>(fd, handler));
 }
@@ -29,13 +34,16 @@ void EventLoop::remove(int fd) {
 }
 
 int EventLoop::run() {
+    std::cout << "Event loop starting..." << std::endl;
     const int max_events = 64;
     epoll_event events[max_events];
     while(true) {
+        std::cout << "Waiting for epoll" << std::endl;
         int nfds = epoll_wait(this->efd, events, max_events, -1);
+        std::cout << "Epoll wait returned" << std::endl;
         if (nfds == -1) {
             if(errno != EINTR) {
-                std::cerr << "epoll_wait" << std::endl;
+                std::cerr << "Error on epoll_wait" << std::endl;
                 return -1;
             }
             continue;
@@ -51,5 +59,3 @@ int EventLoop::run() {
     }
 }
 }
-
-

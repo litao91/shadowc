@@ -4,7 +4,7 @@
 #include <fcntl.h>
 
 namespace utils {
-    int make_socket_non_bocking(int sfd) {
+    int make_socket_non_blocking(int sfd) {
         int flags, s;
 
         flags = fcntl (sfd, F_GETFL, 0);

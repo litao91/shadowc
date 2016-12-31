@@ -1,5 +1,5 @@
 #include "asyncdns.hpp"
-#include "utils.cpp"
+#include "utils.hpp"
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -12,70 +12,39 @@
 #include <time.h>
 #include <vector>
 #include <utility>
+#include <unistd.h> // getpid
+#include <string.h>
 
 namespace asyncdns {
 const static unsigned short QTYPE_ANY = 255;
-const static unsigned short QTYPE_A = 1;
+const static unsigned short QTYPE_A = 1; // Ipv4 address
 const static unsigned short QTYPE_AAAA = 28;
 const static unsigned short QTYPE_CNAME = 5;
 
-std::pair<unsigned char*, int> build_request(const char* address) {
-    std::vector<unsigned char> buf;
-    srand(time(NULL));
-    unsigned short rnd = rand();
-    // build request, note that network byte order is big-endian
-    // request id
-    buf.push_back(rnd >> 8);
-    buf.push_back(rnd & 0xFF);
-    // header (10 bytes)
-    buf.push_back(1);
-    buf.push_back(0);
-    buf.push_back(0);
-    buf.push_back(1);
-    buf.push_back(0);
-    buf.push_back(0);
-    buf.push_back(0);
-    buf.push_back(0);
-    buf.push_back(0);
-    buf.push_back(0);
 
-    // build address, TODO: error handling
-    int label_len_idx = buf.size();
-    buf.push_back(0); // just a place holder
+/**
+ * This will convert www.google.com to 3www6google3com
+ */
+void change_to_dns_name_format(unsigned char* dns, const unsigned char* host) {
+    std::cout << "Building request for " << host << std::endl;
     unsigned char label_len = 0;
-    while(*address != 0) {
-        char v = *address;
+    unsigned char* label_len_ptr = dns;
+    dns++;
+    while(*host != 0) {
+        char v = *host;
         if (v == '.') {
-            buf[label_len_idx] = label_len;
+            *label_len_ptr = label_len;
             label_len = 0;
-            label_len_idx = buf.size();
-            buf.push_back(0); // place holder for the length of next label
+            label_len_ptr = dns;
         } else {
-            buf.push_back(v);
+            *dns = *host;
             ++label_len;
         }
-        ++address;
+        ++host;
+        ++dns;
     }
-    buf[label_len_idx] = label_len;
-    buf.push_back(0);
-    // intel is little endian, we don't care about other 
-    // QTYPE_A
-    buf.push_back(QTYPE_A >> 8); // most significant bit
-    buf.push_back(QTYPE_A & 0xFF);
-
-    // QCLASS_IN=1
-    buf.push_back(0);
-    buf.push_back(1);
-
-    unsigned char* req = new unsigned char[buf.size()];
-    std::cout << "Request: ";
-    for (size_t i = 0; i < buf.size(); ++i) {
-        unsigned char c = buf[i];
-        std::cout << i << ":" << c;
-        req[i] = buf[i];
-    }
-    std::cout << std::endl;
-    return std::pair<unsigned char*, int>(req, buf.size());
+    *label_len_ptr = label_len;
+    *++dns='\0';
 }
 
 DNSResolver::DNSResolver() {
@@ -117,12 +86,21 @@ void DNSResolver::resolve(const char* hostname, callback_t cb) {
         // add new entry for the hostname
         hostname_to_cb[hostname] = new std::vector<callback_t>();
         hostname_status_map[hostname] = this->STATUS_FIRST;
-        this->send_req(hostname);
+        this->send_req(hostname, QTYPE_A);
         this->hostname_to_cb[hostname]->push_back(cb);
     } else {
         this->hostname_to_cb[hostname]->push_back(cb);
-        this->send_req(hostname);
+        this->send_req(hostname, QTYPE_A);
     }
+}
+
+void DNSResolver::create_dns_socket() {
+    if (this->dns_socket != 0) {
+        std::cout << "Socket already created" << std::endl;
+        return;
+    }
+    // create socket
+    this->dns_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 }
 
 // Create the socket for dns resolver and add the socket to eventloop
@@ -131,35 +109,11 @@ void DNSResolver::add_to_loop(eventloop::EventLoop* loop) {
         std::cerr << "Already have a loop" << std::endl;
         return;
     }
-    this-> loop = loop;
+    this->create_dns_socket();
+    this->loop = loop;
     std::cout << "Creating socket" << std::endl;
-    // create socket
-    addrinfo hints;
-    memset(&hints, 0, sizeof(addrinfo));
-    hints.ai_family = AF_INET; // IPv4
-    hints.ai_socktype = SOCK_DGRAM; // UDP
-    hints.ai_flags = AI_PASSIVE;
-    hints.ai_protocol = SOL_UDP;
-    addrinfo *result, *rp;
-    int r = getaddrinfo(NULL, NULL, &hints, &result);
-    if (r != 0) {
-        std::cerr << "get addrinfo" << std::endl;
-        return;
-    }
-    int sfd;
-    for (rp = result; rp != NULL; rp = rp->ai_next) {
-        sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        if (sfd == -1)
-            continue;
-        r = utils::make_socket_non_bocking(sfd);
-        if (r != 0) {
-            std::cerr << "make non blocking" << std::endl;
-            return;
-        }
-        this->dns_socket = sfd;
-        break;
-    }
-    freeaddrinfo(result);
+    utils::make_socket_non_blocking(this->dns_socket);
+    
     // add to loop, wait for incoming data, edge trigger
     loop -> add(this->dns_socket, EPOLLIN | EPOLLET, this);
 }
@@ -186,21 +140,54 @@ void DNSResolver::handle_event(const epoll_event* evt) {
     }
 }
 
-void DNSResolver::send_req(const char* hostname) {
-    std::pair<unsigned char*, int> req = build_request(hostname);
-    unsigned char* buf = req.first;
-    size_t len = req.second;
+void DNSResolver::send_req(const char* hostname, int query_type) {
+    DNS_HEADER *dns = NULL;
+    unsigned char buf[65536];
 
+    // setup the header portion
+    dns = (struct DNS_HEADER *)&buf;
+    
+    dns->id = (unsigned short) htons(getpid());
+    dns->qr = 0; // This is query
+    dns->opcode = 0; // This is 
+    dns->aa = 0; // Not Authoritative
+    dns->tc = 0; // This message is not truncated
+    dns->rd = 1; // Recursion Desired
+    dns->ra = 0; // Recursion not available
+    dns->z = 0;
+    dns->ad = 0;
+    dns->cd = 0;
+    dns->rcode = 0;
+    dns->q_count = htons(1); // we have only 1 question
+    dns->ans_count = 0;
+    dns->auth_count = 0;
+    dns->add_count = 0;
+
+    // point to the query portion, append the host name
+    unsigned char* qname = (unsigned char*)&buf[sizeof(struct DNS_HEADER)];
+    change_to_dns_name_format(qname, (const unsigned char*) hostname);
+
+    // Point to the start of question info
+    QUESTION *qinfo = (QUESTION*)&buf[sizeof(DNS_HEADER) + (strlen((const char*)qname) + 1)];
+    qinfo->qtype = htons(query_type); // type of the query, A, MX CNAME
+    qinfo->qclass = htons(1);
+
+    int len = sizeof(struct DNS_HEADER) + (strlen((const char*)qname)+1) + sizeof(struct QUESTION);
+    std::cout << "Buf of size " << len << std::endl;
     for(int i = 0; i < num_servers; ++i) {
         const char* server = servers[i];
         std::cout << "Resolving " << hostname << "  using server " << server << std::endl;
         sockaddr_in sa;
         sa.sin_family = AF_INET;
+        sa.sin_port = htons(53); // convert to network byteorder
         sa.sin_addr.s_addr = inet_addr(server);
-        sa.sin_port = 53;
-        sendto(this->dns_socket, buf, len, 0, (sockaddr *) &sa, sizeof(sa));
+        int r = sendto(this->dns_socket, (char *)buf, len, 0, (sockaddr *) &sa, sizeof(sa));
+        std::cout << "Sent " << r << " bytes " << std::endl;
     }
-
-    delete [] buf;
 }
+
+int DNSResolver::get_dns_socket() {
+    return this->dns_socket;
+}
+
 }
