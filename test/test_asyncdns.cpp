@@ -85,5 +85,5 @@ void test_send_dns() {
 }
 
 int main(int argc, char** argv) {
-    test_dns_resolve_without_loop();
+    test_send_dns();
 }

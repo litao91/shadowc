@@ -22,6 +22,7 @@ void EventLoop::add(int fd, int mode, EventHandler* handler) {
     std::cout << "Addinig new socket " << fd << " to event loop" <<  std::endl;
     epoll_event ev;
     ev.events = mode;
+    ev.data.fd = fd;
     if(epoll_ctl(this->efd, EPOLL_CTL_ADD, fd, &ev) == -1) {
         std::cerr << "Error epoll_ctl_add" << std::endl;
     }
@@ -52,9 +53,21 @@ int EventLoop::run() {
 
         for (int n = 0; n < nfds; ++n) {
             epoll_event* e = events + n;
-            int fd = e->data.fd;
-            EventHandler* handler = this->fd_handler_map[fd];
-            handler->handle_event(e);
+            if ((e->events & EPOLLERR) ||
+                (e->events & EPOLLHUP) ||
+                !(e->events & EPOLLIN))
+            {
+                std::cerr << "Epoll error " << std::endl;
+            } else {
+                int fd = e->data.fd;
+                std::cout << "Retrieved fd " << fd << std::endl;
+                auto handler_it = this->fd_handler_map.find(fd);
+                if (handler_it == this->fd_handler_map.end()) {
+                    std::cerr << "Can't find handler for fd: " << fd << std::endl;
+                    continue;
+                }
+                handler_it->second->handle_event(e);
+            }
         }
     }
 }
