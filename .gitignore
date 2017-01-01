@@ -7,3 +7,4 @@ test_asyncdns
 .ropeproject/
 compile_commands.json
 tags
+a.out

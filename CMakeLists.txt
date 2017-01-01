@@ -13,6 +13,10 @@ add_library(asyncdns STATIC "${PROJECT_SOURCE_DIR}/lib/asyncdns.cpp")
 target_link_libraries(asyncdns eventloop utils)
 target_compile_options(asyncdns PUBLIC -std=c++11 -Wall)
 
+add_library(tcprelay STATIC "${PROJECT_SOURCE_DIR}/lib/tcprelay.cpp")
+target_link_libraries(tcprelay eventloop utils)
+target_compile_options(tcprelay PUBLIC -std=c++11 -Wall)
+
 add_executable(server "${PROJECT_SOURCE_DIR}/src/server.cpp")
 target_compile_options(server PUBLIC -std=c++11 -Wall)
 target_link_libraries(server asyncdns)

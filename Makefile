@@ -175,6 +175,19 @@ asyncdns/fast:
 	$(MAKE) -f CMakeFiles/asyncdns.dir/build.make CMakeFiles/asyncdns.dir/build
 .PHONY : asyncdns/fast
 
+#=============================================================================
+# Target rules for targets named tcprelay
+
+# Build rule for target.
+tcprelay: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 tcprelay
+.PHONY : tcprelay
+
+# fast build rule for target.
+tcprelay/fast:
+	$(MAKE) -f CMakeFiles/tcprelay.dir/build.make CMakeFiles/tcprelay.dir/build
+.PHONY : tcprelay/fast
+
 lib/asyncdns.o: lib/asyncdns.cpp.o
 
 .PHONY : lib/asyncdns.o
@@ -228,6 +241,33 @@ lib/eventloop.s: lib/eventloop.cpp.s
 lib/eventloop.cpp.s:
 	$(MAKE) -f CMakeFiles/eventloop.dir/build.make CMakeFiles/eventloop.dir/lib/eventloop.cpp.s
 .PHONY : lib/eventloop.cpp.s
+
+lib/tcprelay.o: lib/tcprelay.cpp.o
+
+.PHONY : lib/tcprelay.o
+
+# target to build an object file
+lib/tcprelay.cpp.o:
+	$(MAKE) -f CMakeFiles/tcprelay.dir/build.make CMakeFiles/tcprelay.dir/lib/tcprelay.cpp.o
+.PHONY : lib/tcprelay.cpp.o
+
+lib/tcprelay.i: lib/tcprelay.cpp.i
+
+.PHONY : lib/tcprelay.i
+
+# target to preprocess a source file
+lib/tcprelay.cpp.i:
+	$(MAKE) -f CMakeFiles/tcprelay.dir/build.make CMakeFiles/tcprelay.dir/lib/tcprelay.cpp.i
+.PHONY : lib/tcprelay.cpp.i
+
+lib/tcprelay.s: lib/tcprelay.cpp.s
+
+.PHONY : lib/tcprelay.s
+
+# target to generate assembly for a file
+lib/tcprelay.cpp.s:
+	$(MAKE) -f CMakeFiles/tcprelay.dir/build.make CMakeFiles/tcprelay.dir/lib/tcprelay.cpp.s
+.PHONY : lib/tcprelay.cpp.s
 
 lib/utils.o: lib/utils.cpp.o
 
@@ -323,12 +363,16 @@ help:
 	@echo "... server"
 	@echo "... utils"
 	@echo "... asyncdns"
+	@echo "... tcprelay"
 	@echo "... lib/asyncdns.o"
 	@echo "... lib/asyncdns.i"
 	@echo "... lib/asyncdns.s"
 	@echo "... lib/eventloop.o"
 	@echo "... lib/eventloop.i"
 	@echo "... lib/eventloop.s"
+	@echo "... lib/tcprelay.o"
+	@echo "... lib/tcprelay.i"
+	@echo "... lib/tcprelay.s"
 	@echo "... lib/utils.o"
 	@echo "... lib/utils.i"
 	@echo "... lib/utils.s"
