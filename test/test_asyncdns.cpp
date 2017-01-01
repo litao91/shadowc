@@ -41,7 +41,7 @@ void test_dns_resolve_without_loop() {
     const char* host = "www.google.com";
     resolver.resolve(host, test_callback);
     int s = resolver.get_dns_socket();
-    unsigned char buf[65536];
+    char buf[65536];
 
     struct sockaddr_in dest;
     int i = sizeof dest;
@@ -53,6 +53,27 @@ void test_dns_resolve_without_loop() {
     } else {
         std::cout << "recvfrom returns " << r << std::endl;
     }
+    auto result = asyncdns::parse_response(buf);
+    asyncdns::RES_RECORD* ans = result.first;
+    int ans_len = result.second;
+
+    sockaddr_in a;
+    for (int i = 0; i < ans_len; ++i) {
+        asyncdns::RES_RECORD* rec = ans + i;
+        std::cout << "Name: " << rec->name << " ";
+        int type = ntohs(rec->resource->type);
+        if (type == 1) {
+            long* p;
+            p = (long*) rec->rdata;
+            a.sin_addr.s_addr=(*p);
+            std::cout << "has IPv4 address: " << inet_ntoa(a.sin_addr) << std::endl;
+        }
+
+        if (type == 5) {
+            std::cout << "has alias name: " << rec->rdata << std::endl;
+        }
+    }
+    free_res_record(result);
 }
 
 void test_send_dns() {

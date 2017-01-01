@@ -14,6 +14,7 @@
 #include <utility>
 #include <unistd.h> // getpid
 #include <string.h>
+#include <tuple>
 
 namespace asyncdns {
 const static unsigned short QTYPE_ANY = 255;
@@ -21,6 +22,113 @@ const static unsigned short QTYPE_A = 1; // Ipv4 address
 const static unsigned short QTYPE_AAAA = 28;
 const static unsigned short QTYPE_CNAME = 5;
 
+u_char* read_name(const unsigned char* reader, const unsigned char* buffer, int* count) {
+    unsigned char *name;
+    unsigned int p=0,jumped=0,offset;
+    int i , j;
+
+    *count = 1;
+    name = (unsigned char*)malloc(256);
+
+    name[0]='\0';
+
+    //read the names in 3www6google3com format
+    while(*reader!=0)
+    {
+        if(*reader>=192)
+        {
+            offset = (*reader)*256 + *(reader+1) - 49152; //49152 = 11000000 00000000 ;)
+            reader = buffer + offset - 1;
+            jumped = 1; //we have jumped to another location so counting wont go up!
+        }
+        else
+        {
+            name[p++]=*reader;
+        }
+
+        reader = reader+1;
+
+        if(jumped==0)
+        {
+            *count = *count + 1; //if we havent jumped to another location then we can count up
+        }
+    }
+
+    name[p]='\0'; //string complete
+    if(jumped==1)
+    {
+        *count = *count + 1; //number of steps we actually moved forward in the packet
+    }
+
+    //now convert 3www6google3com0 to www.google.com
+    for(i=0;i<(int)strlen((const char*)name);i++) 
+    {
+        p=name[i];
+        for(j=0;j<(int)p;j++) 
+        {
+            name[i]=name[i+1];
+            i=i+1;
+        }
+        name[i]='.';
+    }
+    name[i-1]='\0'; //remove the last dot
+    return name;
+}
+
+std::pair<RES_RECORD*, int> parse_response(const char* data) {
+    DNS_HEADER *dns = (DNS_HEADER*) data;
+    std::cout << "The response contains " << std::endl;
+    std::cout << "\t" << ntohs(dns->q_count) << " Questions" << std::endl;
+    std::cout << "\t" << ntohs(dns->ans_count) << " Answers" << std::endl;
+    std::cout << "\t" << ntohs(dns->auth_count) << " Authoritative Servers."<< std::endl;
+    std::cout << "\t" << ntohs(dns->add_count) << " Additional records\n" << std::endl;
+
+
+    // prepare reader
+    size_t header_len = sizeof(DNS_HEADER);
+    size_t query_len = strlen(data + header_len) + 1;
+    size_t question_len = sizeof(QUESTION);
+    size_t reader_start_idx = header_len + query_len + question_len;
+    std::cout << "Reader starts at " << reader_start_idx << std::endl;
+    const unsigned char* reader = (const unsigned char*) &data[reader_start_idx];
+
+    // Start reading answers
+    int stop = 0;
+
+    int ans_count = ntohs(dns->ans_count);
+    RES_RECORD* answers = (RES_RECORD*)malloc(sizeof(RES_RECORD)*ans_count);
+
+    for (int i = 0; i < ans_count; ++i) {
+        answers[i].name = read_name(reader, (const unsigned char*) data, &stop);
+        std::cout << "received name " << answers[i].name << std::endl;
+        reader = reader + stop;
+        answers[i].resource = (R_DATA*)(reader);
+        reader = reader + sizeof(R_DATA);
+        if (ntohs(answers[i].resource->type) == 1) { // if ipv4
+            std::cout << "IP v4 received" << std::endl;
+            int resource_len = ntohs(answers[i].resource->data_len);
+            answers[i].rdata = (unsigned char*)malloc(resource_len);
+            for (int j = 0; j < resource_len; ++j) {
+                answers[i].rdata[j] = reader[j];
+            }
+            answers[i].rdata[resource_len] = '\0';
+        } else {
+            answers[i].rdata = read_name(reader, (const unsigned char*) data, &stop);
+            reader = reader + stop;
+        }
+        std::cout << "rdata " << answers[i].rdata << std::endl;
+    }
+    return std::pair<RES_RECORD*, int>(answers, ntohs(dns->ans_count));
+}
+
+
+void free_res_record(std::pair<RES_RECORD*, int> records) {
+    for(int i = 0; i < records.second; ++i) {
+        free((records.first + i)->name);
+        free((records.first + i)->rdata);
+    }
+    free(records.first);
+}
 
 /**
  * This will convert www.google.com to 3www6google3com
@@ -142,7 +250,7 @@ void DNSResolver::handle_event(const epoll_event* evt) {
 
 void DNSResolver::send_req(const char* hostname, int query_type) {
     DNS_HEADER *dns = NULL;
-    unsigned char buf[65536];
+    unsigned char buf[128];
 
     // setup the header portion
     dns = (struct DNS_HEADER *)&buf;

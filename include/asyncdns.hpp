@@ -4,9 +4,15 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <tuple>
 #include "eventloop.hpp"
+
 namespace asyncdns {
     void change_to_dns_name_format(unsigned char* dns, const unsigned char* host);
+    struct RES_RECORD;
+
+    std::pair<RES_RECORD*, int> parse_response(const char* data);
+    void free_res_record(std::pair<RES_RECORD*, int> records);
 
     // type for the asyncdns callback, function ptr 
     typedef void (*callback_t)(const std::string& ip, 
