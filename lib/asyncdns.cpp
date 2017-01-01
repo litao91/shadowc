@@ -89,7 +89,6 @@ std::pair<RES_RECORD*, int> parse_response(const char* data) {
     size_t query_len = strlen(data + header_len) + 1;
     size_t question_len = sizeof(QUESTION);
     size_t reader_start_idx = header_len + query_len + question_len;
-    std::cout << "Reader starts at " << reader_start_idx << std::endl;
     const unsigned char* reader = (const unsigned char*) &data[reader_start_idx];
 
     // Start reading answers
@@ -100,25 +99,25 @@ std::pair<RES_RECORD*, int> parse_response(const char* data) {
 
     for (int i = 0; i < ans_count; ++i) {
         answers[i].name = read_name(reader, (const unsigned char*) data, &stop);
-        std::cout << "received name " << answers[i].name << std::endl;
         reader = reader + stop;
+
         answers[i].resource = (R_DATA*)(reader);
         reader = reader + sizeof(R_DATA);
+
         if (ntohs(answers[i].resource->type) == 1) { // if ipv4
-            std::cout << "IP v4 received" << std::endl;
             int resource_len = ntohs(answers[i].resource->data_len);
             answers[i].rdata = (unsigned char*)malloc(resource_len);
             for (int j = 0; j < resource_len; ++j) {
                 answers[i].rdata[j] = reader[j];
             }
             answers[i].rdata[resource_len] = '\0';
+            reader = reader + resource_len;
         } else {
             answers[i].rdata = read_name(reader, (const unsigned char*) data, &stop);
             reader = reader + stop;
         }
-        std::cout << "rdata " << answers[i].rdata << std::endl;
     }
-    return std::pair<RES_RECORD*, int>(answers, ntohs(dns->ans_count));
+    return std::pair<RES_RECORD*, int>(answers, ans_count);
 }
 
 
