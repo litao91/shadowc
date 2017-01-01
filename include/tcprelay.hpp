@@ -3,6 +3,10 @@
 #include "eventloop.hpp"
 
 namespace tcprelay {
+class TCPRelayHandler: public eventloop::EventHandler {
+    public:
+        TCPRelayHandler();
+        virtual ~TCPRelayHandler();
+};
 }
-
 #endif
