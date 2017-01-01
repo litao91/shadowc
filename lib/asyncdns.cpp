@@ -21,6 +21,7 @@ const static unsigned short QTYPE_ANY = 255;
 const static unsigned short QTYPE_A = 1; // Ipv4 address
 const static unsigned short QTYPE_AAAA = 28;
 const static unsigned short QTYPE_CNAME = 5;
+const static unsigned short QCLASS_IN = 1;
 
 u_char* read_name(const unsigned char* reader, const unsigned char* buffer, int* count) {
     unsigned char *name;
@@ -121,7 +122,7 @@ std::pair<RES_RECORD*, int> parse_response(const char* data) {
 }
 
 
-void free_res_record(std::pair<RES_RECORD*, int> records) {
+void free_response(std::pair<RES_RECORD*, int> records) {
     for(int i = 0; i < records.second; ++i) {
         free((records.first + i)->name);
         free((records.first + i)->rdata);
@@ -237,14 +238,56 @@ void DNSResolver::handle_event(const epoll_event* evt) {
         return;
         // TODO: create new socket and start over again
     } else {
-        char buff[1024];
+        unsigned char buf[1024];
         sockaddr src_addr;
         socklen_t peer_addr_len = sizeof(sockaddr_storage);
-        ssize_t nread = recvfrom(fd, buff, 1024, 0, &src_addr, &peer_addr_len);
+        ssize_t nread = recvfrom(fd, (char*) buf, 1024, 0, &src_addr, &peer_addr_len);
         std::cout << "Read " << nread << " bytes" << std::endl;
         char *ip = inet_ntoa(((sockaddr_in*) &src_addr) -> sin_addr);
-        std::cout << "Resolve dns from "  << ip << std::endl;
+        std::cout << "Receive DNS response from "  << ip << std::endl;
+        this->handle_data(buf);
     }
+}
+
+void DNSResolver::call_callback(const std::string& hostname, const std::string& ip) {
+    auto cb_map_iter = this->hostname_to_cb.find(hostname);
+    if (cb_map_iter == this->hostname_to_cb.end()) {
+        std::cerr << "Couldn't find callback for hostname: " << hostname << std::endl;
+        return;
+    }
+    auto callbacks = cb_map_iter->second;
+    auto cb_iter = callbacks->begin();
+    for (;cb_iter != callbacks->end(); ++cb_iter) {
+        (*cb_iter)(hostname, ip);
+    }
+    callbacks->clear();
+    this->hostname_status_map.erase(hostname);
+}
+
+void DNSResolver::handle_data(const unsigned char* data) {
+    auto response = parse_response((const char*) data);
+    asyncdns::RES_RECORD* answers = response.first;
+    int ans_len = response.second;
+    sockaddr_in a;
+    char* ip = NULL;
+    char* hostname = NULL;
+    for (int i = 0; i < ans_len; ++i) {
+        asyncdns::RES_RECORD* ans = answers + i;
+        int type = ntohs(ans->resource->type);
+        hostname = (char*) ans->name;
+        if (type == QTYPE_A) {
+            long* p;
+            p = (long*) ans->rdata;
+            a.sin_addr.s_addr=(*p);
+            ip = inet_ntoa(a.sin_addr);
+            break;
+        }
+    }
+    if (ip != NULL) {
+        this->call_callback(hostname, ip);
+    }
+
+    free_response(response);
 }
 
 void DNSResolver::send_req(const char* hostname, int query_type) {
@@ -255,8 +298,9 @@ void DNSResolver::send_req(const char* hostname, int query_type) {
     dns = (struct DNS_HEADER *)&buf;
     
     dns->id = (unsigned short) htons(getpid());
+
     dns->qr = 0; // This is query
-    dns->opcode = 0; // This is 
+    dns->opcode = 0; // This is is a standard query
     dns->aa = 0; // Not Authoritative
     dns->tc = 0; // This message is not truncated
     dns->rd = 1; // Recursion Desired

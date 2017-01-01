@@ -29,7 +29,7 @@ void test_build_request() {
     }
 }
 
-void test_callback(const std::string& ip, const std::string& hostname) {
+void test_callback(const std::string& hostname, const std::string& ip) {
     std::cout << "IP: " << ip << ", Host: " << hostname << std::endl;
     ++counter;
 }
@@ -73,7 +73,7 @@ void test_dns_resolve_without_loop() {
             std::cout << "has alias name: " << rec->rdata << std::endl;
         }
     }
-    free_res_record(result);
+    free_response(result);
 }
 
 void test_send_dns() {

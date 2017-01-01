@@ -53,21 +53,14 @@ int EventLoop::run() {
 
         for (int n = 0; n < nfds; ++n) {
             epoll_event* e = events + n;
-            if ((e->events & EPOLLERR) ||
-                (e->events & EPOLLHUP) ||
-                !(e->events & EPOLLIN))
-            {
-                std::cerr << "Epoll error " << std::endl;
-            } else {
-                int fd = e->data.fd;
-                std::cout << "Retrieved fd " << fd << std::endl;
-                auto handler_it = this->fd_handler_map.find(fd);
-                if (handler_it == this->fd_handler_map.end()) {
-                    std::cerr << "Can't find handler for fd: " << fd << std::endl;
-                    continue;
-                }
-                handler_it->second->handle_event(e);
+            int fd = e->data.fd;
+            std::cout << "Retrieved fd " << fd << std::endl;
+            auto handler_it = this->fd_handler_map.find(fd);
+            if (handler_it == this->fd_handler_map.end()) {
+                std::cerr << "Can't find handler for fd: " << fd << std::endl;
+                continue;
             }
+            handler_it->second->handle_event(e);
         }
     }
 }
