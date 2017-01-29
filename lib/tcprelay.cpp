@@ -5,6 +5,8 @@
 #include <netdb.h>
 #include <string.h>
 #include <iostream>
+#include <unistd.h>
+#include <error.h>
 
 namespace tcprelay {
     //  as ssserver:
@@ -87,6 +89,9 @@ namespace tcprelay {
             abort();
         }
     }
+    TCPRelay::~TCPRelay() {
+        // Do nothing now
+    }
 
     void TCPRelay::add_to_loop(eventloop::EventLoop* loop) {
         if (this->loop != NULL) {
@@ -101,6 +106,43 @@ namespace tcprelay {
         this->loop->add(this->server_socket, EPOLLIN | EPOLLERR, this);
     }
 
+    // Destroy the timeout handlers
+    void TCPRelay::sweep_timeout() {
+    }
+
     void TCPRelay::handle_event(const epoll_event* evt) {
+        int r;
+        int fd = evt->data.fd;
+        char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
+
+        if (fd == this->server_socket) { // accept event
+            if (evt->events & EPOLLERR) {
+                std::cerr  << "Epoll error" << std::endl;
+                return;
+            } else {
+                std::cout << "Accept" << std::endl;
+                sockaddr in_addr;
+                socklen_t in_len = sizeof in_addr;
+                int conn = accept(fd, &in_addr, &in_len);
+                if (conn == -1) {
+                    if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+                        return;
+                    }
+                } else {
+                    std::cerr << "Accept" << std::endl;
+                }
+                r = getnameinfo(&in_addr, in_len, hbuf, sizeof hbuf,
+                        sbuf, sizeof sbuf,
+                        NI_NUMERICHOST | NI_NUMERICSERV);
+                if (r == 0) {
+                    std::cout << "Accepted connection on descriptor " << conn << "(host=" << hbuf << ", port=" << sbuf << ")" << std::endl;
+                }
+            }
+        } else {
+            fd_to_handlers_t::iterator it = this->fd_to_handlers.find(fd);
+            if (it != this->fd_to_handlers.end()) {
+                it->second->handle_event(evt);
+            }
+        }
     }
 }

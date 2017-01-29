@@ -1,4 +1,5 @@
 CMakeFiles/
+Makefile
 *.cmake
 CMakeCache.txt
 server

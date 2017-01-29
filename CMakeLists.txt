@@ -3,6 +3,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 project (shadowc)
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 
+find_library(SSL_LIB libssl.a REQUIRED)
+
 add_library(eventloop STATIC "${PROJECT_SOURCE_DIR}/lib/eventloop.cpp")
 target_compile_options(eventloop PUBLIC -std=c++11 -Wall)
 
@@ -16,6 +18,10 @@ target_compile_options(asyncdns PUBLIC -std=c++11 -Wall)
 add_library(tcprelay STATIC "${PROJECT_SOURCE_DIR}/lib/tcprelay.cpp")
 target_link_libraries(tcprelay eventloop utils)
 target_compile_options(tcprelay PUBLIC -std=c++11 -Wall)
+
+add_library(openssl_crypto STATIC "${PROJECT_SOURCE_DIR}/lib/crypto/openssl_crypto.cpp")
+target_link_libraries(openssl_crypto ${SSL_LIB} cipher)
+target_compile_options(openssl_crypto PUBLIC -std=c++11 -Wall)
 
 add_executable(server "${PROJECT_SOURCE_DIR}/src/server.cpp")
 target_compile_options(server PUBLIC -std=c++11 -Wall)
