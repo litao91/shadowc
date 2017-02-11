@@ -5,6 +5,7 @@ CMakeCache.txt
 server
 *.a
 test_asyncdns
+test_crypto
 .ropeproject/
 compile_commands.json
 tags

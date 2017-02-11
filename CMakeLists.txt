@@ -4,6 +4,8 @@ project (shadowc)
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 
 find_library(SSL_LIB libssl.a REQUIRED)
+find_library(CRYPTO_LIB libcrypto.a REQUIRED)
+find_library(DL libdl.so REQUIRED)
 
 add_library(eventloop STATIC "${PROJECT_SOURCE_DIR}/lib/eventloop.cpp")
 target_compile_options(eventloop PUBLIC -std=c++11 -Wall)
@@ -20,7 +22,7 @@ target_link_libraries(tcprelay eventloop utils)
 target_compile_options(tcprelay PUBLIC -std=c++11 -Wall)
 
 add_library(openssl_crypto STATIC "${PROJECT_SOURCE_DIR}/lib/crypto/openssl_crypto.cpp")
-target_link_libraries(openssl_crypto ${SSL_LIB})
+target_link_libraries(openssl_crypto ${CRYPTO_LIB} ${SSL_LIB} ${DL} )
 target_compile_options(openssl_crypto PUBLIC -std=c++11 -Wall)
 
 add_executable(server "${PROJECT_SOURCE_DIR}/src/server.cpp")

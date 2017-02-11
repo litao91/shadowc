@@ -1,5 +1,7 @@
 #include "crypto/openssl_crypto.hpp"
 #include "crypto/crypto.hpp"
+#include <openssl/aes.h>
+#include <openssl/des.h>
 #include <iostream>
 
 namespace crypto {
@@ -8,13 +10,17 @@ namespace crypto {
             unsigned char* key, 
             unsigned char* iv, 
             int op) {
+        std::cout << "INIT OpenSSLCrypto" << std::endl;
         // init the library
-        ERR_load_crypto_strings();
-        const EVP_CIPHER* cipher = EVP_get_cipherbyname(cipher_name);
+        const EVP_CIPHER* cipher = EVP_aes_256_cfb(); // EVP_get_cipherbyname(cipher_name);
+        if (cipher == NULL) {
+            std::cerr << "Can't find cipher " << cipher_name << std::endl;
+            return;
+        }
 
-        this->cipher_ctx = EVP_CIPHER_CTX_new();
         this->cipher_ctx = NULL;
-        if (!this->cipher_ctx) {
+        this->cipher_ctx = EVP_CIPHER_CTX_new();
+        if (this->cipher_ctx == NULL) {
             std::cerr << "Error creating new ctx context" << std::endl;
             return;
         }
@@ -35,7 +41,7 @@ namespace crypto {
     void OpenSSLCrypto::update(const unsigned char* data, int data_size, 
             unsigned char* out, int* out_size) {
         if(!EVP_EncryptUpdate(this->cipher_ctx, out, out_size, data, data_size)) {
-            std::cerr << "Error update encryptiong" << std::endl;
+            std::cerr << "Error update encryption" << std::endl;
             return;
         }
     }
