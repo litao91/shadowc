@@ -3,15 +3,18 @@
 #include <openssl/conf.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include "crypto.hpp"
 namespace crypto {
 
-class OpenSSLCrypto {
+class OpenSSLCrypto: public Crypto {
     public:
         OpenSSLCrypto(const char* cipher_name, 
                 unsigned char *key, 
                 unsigned char *iv, 
                 int op);
-        ~OpenSSLCrypto();
+        virtual ~OpenSSLCrypto();
+        virtual void update(const unsigned char* data, int data_size, 
+                unsigned char* out, int* out_size);
     private:
         EVP_CIPHER_CTX *cipher_ctx;
 };
