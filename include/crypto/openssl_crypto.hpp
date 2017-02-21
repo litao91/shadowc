@@ -3,12 +3,13 @@
 #include <openssl/conf.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <string>
 #include "crypto.hpp"
 namespace crypto {
 
 class OpenSSLCrypto: public Crypto {
     public:
-        OpenSSLCrypto(const char* cipher_name, 
+        OpenSSLCrypto(const std::string& cipher_name, 
                 unsigned char *key, 
                 unsigned char *iv, 
                 int op);

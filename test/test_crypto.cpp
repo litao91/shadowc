@@ -18,11 +18,9 @@ void run_cipher(crypto::Crypto* cipher, crypto::Crypto* decipher) {
     unsigned char* encrypted = new unsigned char[16384 * 1024];
     int result_pos = 0;
     
-    while(pos < BLOCK_SIZE * rounds - 1) {
-        std::cout << " POS:" << pos << std::endl;
-        std::cout << "RPOS:" << result_pos << std::endl;
+    while(pos < BLOCK_SIZE * rounds) {
         int l = rand() % 32688 + 100;
-        l = pos + l < 16384 * 1024 ? l : 16384 * 1024 - pos - 1;
+        l = pos + l < 16384 * 1024 ? l : 16384 * 1024 - pos;
         int result_size = 0;
         cipher->update(plain + pos, 
                 l, encrypted + result_pos, 
@@ -34,24 +32,27 @@ void run_cipher(crypto::Crypto* cipher, crypto::Crypto* decipher) {
     unsigned char* decrypted = new unsigned char[16384 * 1024];
     pos = 0;
     result_pos = 0;
-    while(pos < BLOCK_SIZE * rounds - 1) {
+    while(pos < BLOCK_SIZE * rounds) {
         int l = rand() % 32668 + 100;
-        l = pos + l < 16384 * 1024 ? l : 16384 * 1024 - pos - 1;
+        l = pos + l < 16384 * 1024 ? l : 16384 * 1024 - pos;
         int result_size = 0;
         decipher->update(encrypted+pos,
                 l, decrypted + result_pos,
                 &result_size);
-        std::cout << "From " << pos << " to " << pos + l << std::endl;
         result_pos += result_size;
         pos += l;
     }
 
+    bool good = true;
     for (int i = 0; i < BLOCK_SIZE * rounds; ++i) {
         if (plain[i] != decrypted[i]) {
-            std::cerr << plain[i] << " != " << decrypted[i] << std::endl;
+            std::cerr << "i=" << i << ": " << int(plain[i]) << " != " << int(decrypted[i]) << std::endl;
+            good = false;
         }
     }
-    std::cout << "All good!" << std::endl;
+    if (good) {
+        std::cout << "All good!" << std::endl;
+    }
     delete [] plain;
     delete [] encrypted;
     delete [] decrypted;
