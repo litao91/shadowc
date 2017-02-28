@@ -42,10 +42,16 @@ namespace tcprelay {
 
 
     // TCPRelay class
+    /*
+     * It supports Server mode only at this moment
+     * server -- the listen address
+     * server_port -- the the listen port
+     */
     TCPRelay::TCPRelay(asyncdns::DNSResolver* dns_resolver, const char* server, const char* server_port) {
         // init members
-        loop = NULL;
-        closed = false;
+        this -> loop = NULL;
+        this -> closed = false;
+        this -> dns_resolver = dns_resolver;
 
         // create server socket
         addrinfo hints;
@@ -83,12 +89,13 @@ namespace tcprelay {
         }
         freeaddrinfo(result);
         utils::make_socket_non_blocking(server_socket);
-        r = listen(server_socket, 1024);
+        r = listen(server_socket, 1024); // sockfd, backlog
         if (r == -1) {
             std::cerr << "Error listen" << std::endl;
             abort();
         }
     }
+
     TCPRelay::~TCPRelay() {
         // Do nothing now
     }
@@ -129,7 +136,7 @@ namespace tcprelay {
                         return;
                     }
                 } else {
-                    std::cerr << "Accept" << std::endl;
+                    std::cerr << "Connection accepting error" << std::endl;
                 }
                 r = getnameinfo(&in_addr, in_len, hbuf, sizeof hbuf,
                         sbuf, sizeof sbuf,
@@ -144,5 +151,19 @@ namespace tcprelay {
                 it->second->handle_event(evt);
             }
         }
+    }
+
+
+
+
+// =============== TCPRelayHandler
+    TCPRelayHandler::TCPRelayHandler(
+            TCPRelay* tcp_relay,
+            fd_to_handlers_t* fd_to_handlers,
+            eventloop::EventLoop* loop,
+            int local_sock,
+            asyncdns::DNSResolver* dnsresolver) {
+        this->tcp_relay = tcp_relay;
+        this->fd_to_handlers = fd_to_handlers;
     }
 }

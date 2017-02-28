@@ -1,19 +1,16 @@
-#ifndef SHADOW_C_ENCRYPT_H__
-#define SHADOW_C_ENCRYPT_H__
-
+#include "encrypt.hpp"
+#include <openssl/evp.h>
 namespace encrypt {
-    enum Method {
-        AES_256_CFB = 0
-    };
+Encrypt::Encrypt(const char* password, const char* method) {
 
-    class Encryptor {
-        public:
-            Encryptor(const char* password, Method method);
-            char* decrypt(const char* buf);
-            char* encrypt(const char* buf);
-
-        private:
-            const char* password;
-    };
 }
-#endif
+
+/*
+crypto::Crypto* get_cipher(
+        const char* password,
+        const char* method,
+        unsigned char* iv,
+        int op) {
+}
+*/
+}

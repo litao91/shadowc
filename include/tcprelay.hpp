@@ -5,21 +5,25 @@
 
 namespace tcprelay {
 class TCPRelay;
+class TCPRelayHandler;
+typedef std::map<int, TCPRelayHandler*> fd_to_handlers_t;
 class TCPRelayHandler {
     public:
         TCPRelayHandler(
                 TCPRelay* tcp_relay,
+                fd_to_handlers_t* fd_to_handlers,
                 eventloop::EventLoop* loop,
                 int local_sock, 
                 asyncdns::DNSResolver* dns_resolver);
         ~TCPRelayHandler();
         void handle_event(const epoll_event* evt);
     private:
+        TCPRelay* tcp_relay;
         int local_socket;
         asyncdns::DNSResolver* dns_resolver;
+        fd_to_handlers_t* fd_to_handlers;
 };
 
-typedef std::map<int, TCPRelayHandler*> fd_to_handlers_t;
 
 
 /**
@@ -37,6 +41,7 @@ class TCPRelay: public eventloop::EventHandler {
         eventloop::EventLoop* loop;
         bool closed;
         fd_to_handlers_t fd_to_handlers;
+        asyncdns::DNSResolver* dns_resolver;
 };
 
 }
