@@ -13,6 +13,7 @@ class OpenSSLCrypto: public Crypto {
                 unsigned char *key, 
                 unsigned char *iv, 
                 int op);
+        static const EVP_CIPHER* get_cipher_by_name(const std::string&);
         virtual ~OpenSSLCrypto();
         virtual void update(const unsigned char* data, int data_size, 
                 unsigned char* out, int* out_size);

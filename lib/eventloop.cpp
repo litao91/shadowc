@@ -34,6 +34,9 @@ void EventLoop::remove(int fd) {
     this->fd_handler_map.erase(fd);
 }
 
+/**
+ * Invokes epoll_wait to wait for epoll event
+ */
 int EventLoop::run() {
     std::cout << "Event loop starting..." << std::endl;
     const int max_events = 64;

@@ -1,16 +1,15 @@
-#ifndef SHADOW_C_ENCRYPT__
-#define SHADOW_C_ENCRYPT__
+#ifndef SHADOW_C_CRYPTOR__
+#define SHADOW_C_CRYPTOR__
 #include "crypto/crypto.hpp"
 
-namespace encrypt {
+namespace cryptor {
 
-class Encrypt {
+class Cryptor {
     public:
-        Encrypt(const char* password, const char* method);
+        Cryptor(const char* password, const char* method);
         crypto::Crypto* get_cipher(
                 const char* password, 
                 const char* method, 
-                unsigned char* iv,
                 int op);
         unsigned char* encrypt(const unsigned char* buf);
         unsigned char* decrypt(const unsigned char* buf);

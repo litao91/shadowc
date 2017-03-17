@@ -2,6 +2,7 @@
 #include "crypto/crypto.hpp"
 #include <openssl/aes.h>
 #include <openssl/des.h>
+#include <openssl/evp.h>
 #include <iostream>
 #include <map>
 #include <string>
@@ -16,23 +17,33 @@ namespace crypto {
         return m;
     }
 
+    void init_evp() {
+        static bool initialized = false;
+        if (!initialized) {
+            initialized = true;
+            OpenSSL_add_all_algorithms();
+        }
+    }
+
     const static std::map<std::string, cipher_ctor_t> name_cipher_map = create_name_cipher_map();
+
+    const EVP_CIPHER* OpenSSLCrypto::get_cipher_by_name(const std::string& cipher_name){
+        init_evp();
+        return EVP_get_cipherbyname(cipher_name.c_str());
+    }
 
     OpenSSLCrypto::OpenSSLCrypto(const std::string& cipher_name, 
             unsigned char* key, 
             unsigned char* iv, 
             int op) {
+        init_evp();
         std::cout << "INIT OpenSSLCrypto" << std::endl;
-        // init the library
-        std::map<std::string, cipher_ctor_t>::const_iterator it = name_cipher_map.find(cipher_name);
-        if (it == name_cipher_map.end()) {
-            std::cerr << "Can't find cipher " << cipher_name << std::endl;
-            return;
-        }
-        const EVP_CIPHER* cipher = (it->second)();
-
         this->cipher_ctx = NULL;
         this->cipher_ctx = EVP_CIPHER_CTX_new();
+        const EVP_CIPHER* cipher = get_cipher_by_name(cipher_name);
+        if (cipher == NULL) {
+            return;
+        }
         if (this->cipher_ctx == NULL) {
             std::cerr << "Error creating new ctx context" << std::endl;
             return;
