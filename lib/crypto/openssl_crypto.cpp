@@ -9,6 +9,7 @@
 
 namespace crypto {
     typedef const EVP_CIPHER* (* cipher_ctor_t) (void);
+    inline Crypto::~Crypto() {}
 
     
     static std::map<std::string, cipher_ctor_t> create_name_cipher_map() {
