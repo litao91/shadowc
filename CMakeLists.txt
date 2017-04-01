@@ -23,7 +23,7 @@ target_link_libraries(openssl_crypto ${CRYPTO_LIB} ${SSL_LIB} ${DL} )
 target_compile_options(openssl_crypto PUBLIC -std=c++11 -Wall)
 
 add_library(cryptor STATIC "${PROJECT_SOURCE_DIR}/lib/cryptor.cpp")
-target_link_libraries(cryptor openssl_crypto)
+target_link_libraries(cryptor openssl_crypto utils)
 target_compile_options(cryptor PUBLIC -std=c++11 -Wall)
 
 add_library(tcprelay STATIC "${PROJECT_SOURCE_DIR}/lib/tcprelay.cpp")
@@ -41,3 +41,8 @@ target_link_libraries(test_asyncdns asyncdns)
 add_executable(test_crypto "${PROJECT_SOURCE_DIR}/test/test_crypto.cpp")
 target_compile_options(test_crypto PUBLIC -std=c++11 -Wall)
 target_link_libraries(test_crypto openssl_crypto)
+
+add_executable(test_cryptor "${PROJECT_SOURCE_DIR}/test/test_cryptor.cpp")
+target_compile_options(test_cryptor PUBLIC -std=c++11 -Wall)
+target_link_libraries(test_cryptor cryptor)
+

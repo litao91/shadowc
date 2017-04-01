@@ -1,5 +1,6 @@
 #include "cryptor.hpp"
 #include "crypto/openssl_crypto.hpp"
+#include "utils.hpp"
 #include <openssl/evp.h>
 #include <string.h>
 #include <iostream>
@@ -9,17 +10,11 @@ namespace  cryptor{
 const int CIPHER_ENC_ENCRYPTION = 1;
 const int CIPHER_ENC_DECRYPTION = 0;
 
-static char* random_string(int length) {
-    char* r = new char[length];
-    FILE* fp = fopen("/dev/urandom", "r");
-    fread(r, 1, length, fp);
-    fclose(fp);
-    return r;
-}
 
 Cryptor::Cryptor(const char* password, const char* method) {
     this->iv_sent = false;
-    unsigned char* iv =(unsigned char*) random_string( EVP_MAX_IV_LENGTH); 
+    unsigned char* iv = new unsigned char[EVP_MAX_IV_LENGTH];
+    utils::random_string(EVP_MAX_IV_LENGTH, (char*) iv); 
     this->cipher = this->get_cipher(password, method, CIPHER_ENC_ENCRYPTION, 
             iv);
     delete [] iv;
@@ -101,6 +96,7 @@ void Cryptor::encrypt(const unsigned char* buf, int len,
         this->cipher->update(
                 buf, len, out + this->cipher_iv_len, &encrypted_len);
         *out_size = encrypted_len + this->cipher_iv_len;
+        this->iv_sent = true;
     }
 }
 
@@ -120,7 +116,7 @@ void Cryptor::decrypt(const unsigned char* buf, int len,
                 CIPHER_ENC_DECRYPTION,
                 decipher_iv);
         buf = buf + this->cipher_iv_len;
-        len = len - this->cipher_iv_len;
+        len = this->cipher_iv_len;
     }
     if (len == 0) {
         *out_size = 0;

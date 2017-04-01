@@ -22,4 +22,10 @@ namespace utils {
 
         return 0;
     }
+
+    void random_string(int length, char* buf) {
+        FILE* fp = fopen("/dev/urandom", "r");
+        fread(buf, 1, length, fp);
+        fclose(fp);
+    }
 }
