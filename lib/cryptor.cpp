@@ -15,12 +15,9 @@ Cryptor::Cryptor(const char* password, const char* method) {
     this->iv_sent = false;
     unsigned char* iv = new unsigned char[EVP_MAX_IV_LENGTH];
     utils::random_string(EVP_MAX_IV_LENGTH, (char*) iv); 
-    this->cipher = this->get_cipher(password, method, CIPHER_ENC_ENCRYPTION, 
-            iv);
+    this->cipher = this->get_cipher(password, method, CIPHER_ENC_ENCRYPTION, iv);
     delete [] iv;
-    this-> cipher_iv = NULL;
-    this-> decipher_iv = NULL;
-    this->cipher_iv_len = 0;
+    this->decipher_iv = NULL;
     this->decipher = NULL;
     this->method = method;
     this->password = password;
@@ -71,12 +68,13 @@ crypto::Crypto* Cryptor::get_cipher(
         return NULL;
     }
     crypto::OpenSSLCrypto* crypto =  new crypto::OpenSSLCrypto(method, key, iv, op);
+    int iv_len = cipher->iv_len;
+    this->cipher_iv_len = iv_len;
     if (op == CIPHER_ENC_ENCRYPTION) {
-        int iv_len = cipher->iv_len;
         unsigned char* buf = new unsigned char[iv_len];
+        // put the iv to the beginning of the buffer
         memcpy(buf, iv, sizeof(unsigned char) * iv_len);
         this->set_cipher_iv(buf);
-        this->cipher_iv_len = iv_len;
     }
     return crypto;
 }
@@ -88,9 +86,10 @@ void Cryptor::encrypt(const unsigned char* buf, int len,
         return;
     }
     if(this->iv_sent) {
-        return this->cipher->update(
+        this->cipher->update(
                 buf, len, out, out_size);
     } else {
+        std::cout << "Iv not sent, creating new iv of size " << this->cipher_iv_len << std::endl;
         memcpy(out, this->cipher_iv, this->cipher_iv_len * sizeof(unsigned char));
         int encrypted_len = 0;
         this->cipher->update(
@@ -108,6 +107,9 @@ void Cryptor::decrypt(const unsigned char* buf, int len,
     }
     if (this->decipher == NULL) {
         unsigned char* decipher_iv = new unsigned char[this->cipher_iv_len];
+        std::cout << "Cipher len" << this->cipher_iv_len << std::endl;
+        // if it's the first time we connected, the cipher should be at the front 
+        // of the payload
         memcpy(decipher_iv, buf, this->cipher_iv_len * sizeof(unsigned char));
         this->decipher_iv = decipher_iv;
         this->decipher = this->get_cipher(
@@ -116,7 +118,7 @@ void Cryptor::decrypt(const unsigned char* buf, int len,
                 CIPHER_ENC_DECRYPTION,
                 decipher_iv);
         buf = buf + this->cipher_iv_len;
-        len = this->cipher_iv_len;
+        len = len - this->cipher_iv_len;
     }
     if (len == 0) {
         *out_size = 0;

@@ -6,6 +6,7 @@ server
 *.a
 test_asyncdns
 test_crypto
+test_cryptor
 .ropeproject/
 compile_commands.json
 tags
