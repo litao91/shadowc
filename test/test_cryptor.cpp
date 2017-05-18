@@ -15,17 +15,6 @@ void test_encryptor() {
 
     encryptor.encrypt(plain, 10240, encrypted, &outsize);
     decryptor.decrypt(encrypted, outsize, plain2, &outsize2);
-    for(int i = 0; i < 1024; ++i) {
-        std::cout << (int)plain[i];
-    }
-    std::cout << std::endl << "===========" << std::endl;
-    
-
-    for(int i = 0; i < 1024; ++i) {
-        std::cout << (int)plain2[i];
-    }
-    std::cout << std::endl;
-
     bool ok = true;
     for(int i = 0; i < 10240; ++i) {
         if (plain[i] != plain2[i]) {
